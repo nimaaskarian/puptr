@@ -1,32 +1,28 @@
-use std::io::{BufReader, BufWriter, Read, Write};
-
-#[derive(Debug)]
-pub(super) struct XmlNode {
+#[derive(Debug, PartialEq)]
+pub (super) struct XmlNode {
     pub(super) name: String,
     pub(super) children: Vec<XmlNode>,
 }
 
+const TAB:&str = "   ";
 impl XmlNode {
-    pub fn new(name: String) -> Self {
+    pub fn new<S>(name: S) -> Self where
+    S: ToString {
         XmlNode {
-            name,
+            name: name.to_string(),
             children: vec![]
         }
-    }
-
-    pub fn default() -> Self {
-        Self::new(String::from("a"))
     }
 
     pub fn push(&mut self,item: Self) {
         self.children.push(item)
     }
 
-    pub fn write<W: Write>(writer: &mut BufWriter<W>) {
-        unimplemented!()
-    }
-
-    pub fn reader<R: Read>(reader: &mut BufReader<R>) {
-        unimplemented!()
+    pub fn to_string(&self, depth: usize) -> String {
+        let mut inner = String::new();
+        for child in &self.children {
+            inner.push_str(child.to_string(depth+1).as_str())
+        }
+        format!("{}<{}>\n{}{}</{}>\n", TAB.repeat(depth),self.name, inner,TAB.repeat(depth), self.name)
     }
 }
