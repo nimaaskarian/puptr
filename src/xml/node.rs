@@ -3,6 +3,7 @@ use std::collections::HashMap;
 #[derive(Debug, PartialEq)]
 pub (super) struct XmlNode {
     pub(super) name: String,
+    pub(super) text: String,
     pub(super) children: Vec<Self>,
     pub(super) attributes: HashMap<String, String>,
 }
@@ -12,6 +13,7 @@ impl Default for XmlNode {
             name: String::new(),
             children: vec![],
             attributes: HashMap::new(),
+            text: String::new(),
         }
     }
 }
@@ -22,6 +24,13 @@ impl XmlNode {
     S: ToString {
         XmlNode {
             name: name.to_string(),
+            ..Default::default()
+        }
+    }
+
+    pub fn new_text<S>(text: S) -> Self where S: ToString {
+        XmlNode {
+            text: text.to_string(),
             ..Default::default()
         }
     }
@@ -55,6 +64,10 @@ impl XmlNode {
             .collect();
         let tabs = TAB.repeat(depth);
         let name = &self.name;
-        format!("{tabs}<{name}{attributes}>\n{inner}{tabs}</{name}>\n")
+        if name.is_empty() {
+            format!("{tabs}{}\n", self.text)
+        } else {
+            format!("{tabs}<{name}{attributes}>\n{inner}{tabs}</{name}>\n")
+        }
     }
 }

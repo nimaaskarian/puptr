@@ -28,6 +28,7 @@ impl TryFrom<&str> for Xml {
     fn try_from(input:&str) -> Result<Self, Self::Error> {
         let mut tmp_nodes: Vec<(usize,Node)> = vec![];
         let mut current_name = String::new();
+        let mut current_text = String::new();
         let mut attribute_name = String::new();
         let mut attribute_value = String::new();
         let mut current_attributes: HashMap<String, String> = HashMap::new();
@@ -37,7 +38,17 @@ impl TryFrom<&str> for Xml {
             match state {
                 State::None => {
                     if ch == '<' {
+                        if !current_text.is_empty() {
+                            let (_, node) = tmp_nodes.last_mut().unwrap();
+                            node.push(Node::new_text(current_text));
+                            current_text = String::new();
+                        }
                         state = State::TagStart;
+                    } else if !char::is_whitespace(ch) {
+                         current_text.push(ch)
+                    }
+                    if char::is_whitespace(ch) && !current_text.is_empty() && !char::is_whitespace(current_text.chars().last().unwrap()) {
+                        current_text.push(' ')
                     }
                 }
                 State::TagStart => {
@@ -50,8 +61,11 @@ impl TryFrom<&str> for Xml {
                         current_attributes = HashMap::new();
                         state = State::None;
                     }
-                    else if ch == ' '{
-                        state = State::AttributeName;
+                    else if ch == ' ' {
+                        let next_char = input.chars().nth(i+1).unwrap();
+                        if next_char != '>' && !char::is_whitespace(next_char) {
+                            state = State::AttributeName;
+                        }
                     } else {
                         current_name.push(ch);
                     }
@@ -67,7 +81,9 @@ impl TryFrom<&str> for Xml {
                 State::AttributeValue => {
                     if ch == '"' {
                         state = State::TagStart;
-                        current_attributes.insert(attribute_name, attribute_value);
+                        if !attribute_value.is_empty() && !attribute_name.is_empty() {
+                            current_attributes.insert(attribute_name, attribute_value);
+                        }
                         attribute_value = String::new();
                         attribute_name = String::new();
                     } else {
@@ -133,6 +149,7 @@ impl Xml {
         unimplemented!()
     }
 }
+
 mod tests {
     use super::*;
     #[test]
