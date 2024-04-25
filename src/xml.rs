@@ -27,7 +27,7 @@ impl TryFrom<&str> for Xml {
         let mut tmp_nodes: Vec<(usize,Node)> = vec![];
         let mut current_name = String::new();
         let mut state = State::None;
-        let mut items: Vec<Node> = vec![];
+        let mut xml = Xml::new();
         for (i, ch) in input.chars().enumerate() {
             match state {
                 State::None => {
@@ -59,7 +59,7 @@ impl TryFrom<&str> for Xml {
                         if let Some((_,parent_node)) = tmp_nodes.last_mut() {
                             parent_node.push(node)
                         } else {
-                            items.push(node)
+                            xml.push(node)
                         }
                         current_name = String::new();
                         state = State::None;
@@ -73,10 +73,8 @@ impl TryFrom<&str> for Xml {
         if let Some((index, _)) = tmp_nodes.pop() {
             return Err(Self::Error::NotClosed(index))
         }
-        println!("{:?}", items);
-        Ok(Self {
-            items
-        })
+        println!("{:?}", xml);
+        Ok(xml)
     }
 }
 
@@ -87,7 +85,7 @@ impl Xml {
         }
     }
 
-    pub fn root(&self) -> Option<&Node> {
+    pub(self) fn root(&self) -> Option<&Node> {
         if self.items.len() == 1 {
             self.items.first()
         } else {
@@ -95,10 +93,12 @@ impl Xml {
         }
     }
 
-    pub fn print(&self) {
-        for item in &self.items {
-            print!("{}", item.to_string(0))
-        }
+    pub(self) fn push(&mut self, value: Node) {
+        self.items.push(value)
+    }
+
+    pub fn to_string(&self) -> String {
+        self.items.iter().map(|item| item.to_string(0)).collect()
     }
 
     pub fn write<W: Write>(writer: &mut BufWriter<W>) {
