@@ -50,8 +50,11 @@ impl XmlNode {
         let inner: String = self.children.iter()
             .map(|child| child.to_string(depth+1))
             .collect();
+        let attributes: String = self.attributes.iter()
+            .map(|(key, value)| format!(" {key}=\"{value}\""))
+            .collect();
         let tabs = TAB.repeat(depth);
         let name = &self.name;
-        format!("{tabs}<{name}>\n{inner}{tabs}</{name}>\n")
+        format!("{tabs}<{name}{attributes}>\n{inner}{tabs}</{name}>\n")
     }
 }
