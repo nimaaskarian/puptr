@@ -1,7 +1,19 @@
+use std::collections::HashMap;
+
 #[derive(Debug, PartialEq)]
 pub (super) struct XmlNode {
     pub(super) name: String,
-    pub(super) children: Vec<XmlNode>,
+    pub(super) children: Vec<Self>,
+    pub(super) attributes: HashMap<String, String>,
+}
+impl Default for XmlNode {
+    fn default() -> Self {
+        XmlNode {
+            name: String::new(),
+            children: vec![],
+            attributes: HashMap::new(),
+        }
+    }
 }
 
 const TAB:&str = "   ";
@@ -10,7 +22,23 @@ impl XmlNode {
     S: ToString {
         XmlNode {
             name: name.to_string(),
-            children: vec![]
+            ..Default::default()
+        }
+    }
+
+    pub fn new_with_children<S>(name: S, children: Vec<Self>)  -> Self where
+    S:ToString {
+        XmlNode {
+            children,
+            ..Self::new(name)
+        }
+    }
+
+    pub fn new_with_attributes<S>(name: S, attributes: HashMap<String, String>) -> Self where
+    S: ToString {
+        XmlNode {
+            attributes,
+            ..Self::new(name)
         }
     }
 

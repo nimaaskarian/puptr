@@ -1,4 +1,4 @@
-use std::io::{BufReader, BufWriter, Read, Write};
+use std::{collections::HashMap, io::{BufReader, BufWriter, Read, Write}};
 mod node;
 use node::XmlNode;
 
@@ -11,6 +11,8 @@ pub enum XmlError {
 enum State {
     None,
     TagStart,
+    AttributeName,
+    AttributeValue,
     TagEnd,
 }
 
@@ -26,6 +28,9 @@ impl TryFrom<&str> for Xml {
     fn try_from(input:&str) -> Result<Self, Self::Error> {
         let mut tmp_nodes: Vec<(usize,Node)> = vec![];
         let mut current_name = String::new();
+        let mut attribute_name = String::new();
+        let mut attribute_value = String::new();
+        let mut current_attributes: HashMap<String, String> = HashMap::new();
         let mut state = State::None;
         let mut xml = Xml::new();
         for (i, ch) in input.chars().enumerate() {
@@ -40,13 +45,36 @@ impl TryFrom<&str> for Xml {
                         state = State::TagEnd;
                     }
                     else if ch == '>' {
-                        tmp_nodes.push((i,Node::new(current_name)));
+                        tmp_nodes.push((i, Node::new_with_attributes(current_name, current_attributes)));
                         current_name = String::new();
+                        current_attributes = HashMap::new();
                         state = State::None;
+                    }
+                    else if ch == ' '{
+                        state = State::AttributeName;
                     } else {
                         current_name.push(ch);
                     }
                 }
+                State::AttributeName => {
+                    if ch == '"' && input.chars().nth(i-1).unwrap() == '='{
+                        state = State::AttributeValue;
+                        attribute_name.pop();
+                    } else {
+                        attribute_name.push(ch);
+                    }
+                }
+                State::AttributeValue => {
+                    if ch == '"' {
+                        state = State::TagStart;
+                        current_attributes.insert(attribute_name, attribute_value);
+                        attribute_value = String::new();
+                        attribute_name = String::new();
+                    } else {
+                        attribute_value.push(ch);
+                    }
+                }
+                
                 State::TagEnd => {
                     if ch == '>' {
                         let (index, node) = match tmp_nodes.pop() {
@@ -56,7 +84,7 @@ impl TryFrom<&str> for Xml {
                         if node.name != current_name {
                             return Err(Self::Error::NotClosed(index))
                         }
-                        if let Some((_,parent_node)) = tmp_nodes.last_mut() {
+                        if let Some((_, parent_node)) = tmp_nodes.last_mut() {
                             parent_node.push(node)
                         } else {
                             xml.push(node)
@@ -126,13 +154,16 @@ mod tests {
         let list = Xml::try_from("<a><b><d></d></b><c><e></e></c></a><z></z>").unwrap();
         let a_node = Node {
             name: "a".to_string(),
+            attributes: HashMap::new(),
             children: vec![
                 Node {
                     name: "b".to_string(),
+                    attributes: HashMap::new(),
                     children: vec![Node::new("d")]
                 },
                 Node {
                     name: "c".to_string(),
+                    attributes: HashMap::new(),
                     children: vec![Node::new("e")]
                 },
             ]
