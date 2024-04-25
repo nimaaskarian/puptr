@@ -47,10 +47,11 @@ impl XmlNode {
     }
 
     pub fn to_string(&self, depth: usize) -> String {
-        let mut inner = String::new();
-        for child in &self.children {
-            inner.push_str(child.to_string(depth+1).as_str())
-        }
-        format!("{}<{}>\n{}{}</{}>\n", TAB.repeat(depth),self.name, inner,TAB.repeat(depth), self.name)
+        let inner: String = self.children.iter()
+            .map(|child| child.to_string(depth+1))
+            .collect();
+        let tabs = TAB.repeat(depth);
+        let name = &self.name;
+        format!("{tabs}<{name}>\n{inner}{tabs}</{name}>\n")
     }
 }
