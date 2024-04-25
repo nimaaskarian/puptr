@@ -152,22 +152,16 @@ mod tests {
     #[test]
     fn test_complex_node() {
         let list = Xml::try_from("<a><b><d></d></b><c><e></e></c></a><z></z>").unwrap();
-        let a_node = Node {
-            name: "a".to_string(),
-            attributes: HashMap::new(),
-            children: vec![
-                Node {
-                    name: "b".to_string(),
-                    attributes: HashMap::new(),
-                    children: vec![Node::new("d")]
-                },
-                Node {
-                    name: "c".to_string(),
-                    attributes: HashMap::new(),
-                    children: vec![Node::new("e")]
-                },
+        let a_node = Node::new_with_children("a",
+            vec![
+                    Node::new_with_children("b",
+                        vec![Node::new("d")]
+                    ),
+                    Node::new_with_children("c",
+                        vec![Node::new("e")]
+                    ),
             ]
-        };
+        );
         let expected = Xml{items: vec![a_node, Node::new("z")]};
         assert_eq!(list, expected)
     }
