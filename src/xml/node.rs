@@ -71,3 +71,14 @@ impl XmlNode {
         }
     }
 }
+
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_to_string() {
+        let node = XmlNode::new_with_children("html", vec![XmlNode::new("a")]);
+        let expected = format!("<html>\n{TAB}<a>\n{TAB}</a>\n</html>\n");
+        assert_eq!(expected, node.to_string(0))
+    }
+}
