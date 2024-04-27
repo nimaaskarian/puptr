@@ -156,6 +156,23 @@ impl Xml {
     pub fn write<W: Write>(writer: &mut BufWriter<W>) {
         unimplemented!()
     }
+
+    pub fn search_query<S>(&self, query: S)  -> Xml where S: ToString {
+        let query = query.to_string();
+        let mut chars = query.chars().into_iter();
+        if let Some(char) = chars.next() {
+            if char == '.' {
+                let class_name: String = chars.collect();
+                return self.root().unwrap().search(&|node| node.has_class(class_name.clone()))
+            } else {
+                chars.next_back();
+                let node_name: String = chars.collect();
+                let node_name = format!("{char}{node_name}");
+                return self.root().unwrap().search(&|node| node.name == node_name)
+            }
+        }
+        Xml::new(vec![])
+    }
 }
 
 mod tests {

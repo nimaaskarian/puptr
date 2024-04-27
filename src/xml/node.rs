@@ -53,14 +53,23 @@ impl XmlNode {
         }
     }
 
-    pub fn search(&self, f: fn (&XmlNode) -> bool) -> Xml {
+    pub fn has_class<S>(&self, needle: S) -> bool where S: ToString{
+        let haystack = self.attributes.get("class");
+        if let Some(classes) = haystack {
+            classes.split_whitespace().find(|hay| *hay == needle.to_string()).is_some()
+        } else {
+            false
+        }
+    }
+
+    pub fn search(&self, f: &dyn Fn (&XmlNode) -> bool) -> Xml {
         let mut items = vec![];
         self.search_helper(f, &mut items);
         Xml::new(items)
     }
 
     /// Recursive helper for search method. Its private for obvious reasons.
-    fn search_helper(&self, f: fn(&XmlNode) -> bool, result: &mut Vec<XmlNode>) {
+    fn search_helper(&self, f: &dyn Fn(&XmlNode) -> bool, result: &mut Vec<XmlNode>) {
         if f(self) {
             result.push(self.clone());
         }
