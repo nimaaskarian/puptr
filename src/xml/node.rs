@@ -62,6 +62,15 @@ impl XmlNode {
         }
     }
 
+    pub fn id_is<S>(&self, needle_id: S) -> bool where S: ToString{
+        let id = self.attributes.get("id");
+        if let Some(id) = id {
+            *id == needle_id.to_string()
+        } else {
+            false
+        }
+    }
+
     pub fn search(&self, f: &dyn Fn (&XmlNode) -> bool) -> Xml {
         let mut items = vec![];
         self.search_helper(f, &mut items);
