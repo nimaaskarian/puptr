@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 
-#[derive(Debug, PartialEq)]
-pub (super) struct XmlNode {
+use super::Xml;
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct XmlNode {
     pub(super) name: String,
     pub(super) text: String,
     pub(super) children: Vec<Self>,
@@ -48,6 +50,22 @@ impl XmlNode {
         XmlNode {
             attributes,
             ..Self::new(name)
+        }
+    }
+
+    pub fn search(&self, f: fn (&XmlNode) -> bool) -> Xml {
+        let mut items = vec![];
+        self.search_helper(f, &mut items);
+        Xml::new(items)
+    }
+
+    /// Recursive helper for search method. Its private for obvious reasons.
+    fn search_helper(&self, f: fn(&XmlNode) -> bool, result: &mut Vec<XmlNode>) {
+        if f(self) {
+            result.push(self.clone());
+        }
+        for child in &self.children {
+            child.search_helper(f, result);
         }
     }
 

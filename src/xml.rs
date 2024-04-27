@@ -34,7 +34,7 @@ impl TryFrom<&str> for Xml {
         let mut attribute_value = String::new();
         let mut current_attributes: HashMap<String, String> = HashMap::new();
         let mut state = Default::default();
-        let mut xml = Xml::new();
+        let mut xml = Xml::new(vec![]);
         for (i, ch) in input.chars().enumerate() {
             match state {
                 State::None => {
@@ -131,13 +131,13 @@ impl TryFrom<&str> for Xml {
 }
 
 impl Xml {
-    pub fn new() -> Self {
+    pub fn new(items: Vec<XmlNode>) -> Self {
         Self {
-            items: vec![],
+            items,
         }
     }
 
-    pub(self) fn root(&self) -> Option<&Node> {
+    pub fn root(&self) -> Option<&Node> {
         if self.items.len() == 1 {
             self.items.first()
         } else {

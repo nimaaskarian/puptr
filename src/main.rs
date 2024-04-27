@@ -7,11 +7,11 @@ fn main() -> io::Result<()>{
     let mut input = String::new();
     handle.read_to_string(&mut input)?;
 
-    let list = Xml::try_from(input.as_str());
-    if let Err(err) = list {
+    let xml = Xml::try_from(input.as_str());
+    if let Err(err) = xml {
         println!("Error! {:?}", err)
-    } else {
-        print!("{}", list.unwrap().to_string())
+    } else if let Ok(xml) = xml{
+        print!("{}", xml.to_string());
     }
     Ok(())
 }
