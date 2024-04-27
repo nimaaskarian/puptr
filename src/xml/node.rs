@@ -18,7 +18,7 @@ impl Default for XmlNode {
     }
 }
 
-const TAB:&str = "   ";
+const TAB:&str = " ";
 impl XmlNode {
     pub fn new<S>(name: S) -> Self where
     S: ToString {
@@ -62,8 +62,8 @@ impl XmlNode {
         let attributes: String = self.attributes.iter()
             .map(|(key, value)| format!(" {key}=\"{value}\""))
             .collect();
-        let tabs = TAB.repeat(depth);
         let name = &self.name;
+        let tabs = TAB.repeat(depth);
         if name.is_empty() {
             format!("{tabs}{}\n", self.text)
         } else {

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, io::{BufReader, BufWriter, Read, Write}};
+use std::{collections::HashMap, default, io::{BufReader, BufWriter, Read, Write}};
 mod node;
 use node::XmlNode;
 
@@ -7,8 +7,9 @@ pub enum XmlError {
     NotClosed(usize),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 enum State {
+    #[default]
     None,
     TagStart,
     AttributeName,
@@ -26,48 +27,52 @@ pub struct Xml {
 impl TryFrom<&str> for Xml {
     type Error = XmlError;
     fn try_from(input:&str) -> Result<Self, Self::Error> {
-        let mut tmp_nodes: Vec<(usize,Node)> = vec![];
+        let mut nodes: Vec<(usize,Node)> = vec![];
         let mut current_name = String::new();
         let mut current_text = String::new();
         let mut attribute_name = String::new();
         let mut attribute_value = String::new();
         let mut current_attributes: HashMap<String, String> = HashMap::new();
-        let mut state = State::None;
+        let mut state = Default::default();
         let mut xml = Xml::new();
         for (i, ch) in input.chars().enumerate() {
             match state {
                 State::None => {
-                    if ch == '<' {
-                        if !current_text.is_empty() {
-                            let (_, node) = tmp_nodes.last_mut().unwrap();
-                            node.push(Node::new_text(current_text));
-                            current_text = String::new();
+                    match ch {
+                        '<' => {
+                            if !current_text.is_empty() {
+                                let (_, node) = nodes.last_mut().unwrap();
+                                node.push(Node::new_text(current_text.trim_end()));
+                                current_text = String::new();
+                            }
+                            state = State::TagStart;
                         }
-                        state = State::TagStart;
-                    } else if !char::is_whitespace(ch) {
-                         current_text.push(ch)
-                    }
-                    if char::is_whitespace(ch) && !current_text.is_empty() && !char::is_whitespace(current_text.chars().last().unwrap()) {
-                        current_text.push(' ')
+                        any if !any.is_whitespace() || !current_text.is_empty() => {
+                            current_text.push(ch)
+                        }
+                        _ => {}
                     }
                 }
                 State::TagStart => {
-                    if ch == '/' {
-                        state = State::TagEnd;
-                    }
-                    else if ch == '>' {
-                        tmp_nodes.push((i, Node::new_with_attributes(current_name, current_attributes)));
-                        current_name = String::new();
-                        current_attributes = HashMap::new();
-                        state = State::None;
-                    }
-                    else if ch == ' ' {
-                        let next_char = input.chars().nth(i+1).unwrap();
-                        if next_char != '>' && !char::is_whitespace(next_char) {
-                            state = State::AttributeName;
+                    match ch {
+                        '/' => {
+                            state = State::TagEnd;
                         }
-                    } else {
-                        current_name.push(ch);
+                        '>' => {
+                            nodes.push((i, Node::new_with_attributes(current_name, current_attributes)));
+                            current_name = String::new();
+                            current_attributes = HashMap::new();
+                            state = Default::default();
+                        }
+                        any if any.is_whitespace() => {
+                            let next_char = input.chars().nth(i+1).unwrap();
+                            if next_char != '>' && !next_char.is_whitespace() {
+                                state = State::AttributeName;
+                            }
+                        }
+                        any => {
+                            current_name.push(any);
+                        }
                     }
                 }
                 State::AttributeName => {
@@ -79,45 +84,48 @@ impl TryFrom<&str> for Xml {
                     }
                 }
                 State::AttributeValue => {
-                    if ch == '"' {
-                        state = State::TagStart;
-                        if !attribute_value.is_empty() && !attribute_name.is_empty() {
-                            current_attributes.insert(attribute_name, attribute_value);
+                    match ch {
+                        '"' => {
+                            state = State::TagStart;
+                            if !attribute_value.is_empty() && !attribute_name.is_empty() {
+                                current_attributes.insert(attribute_name, attribute_value);
+                                attribute_value = String::new();
+                                attribute_name = String::new();
+                            }
                         }
-                        attribute_value = String::new();
-                        attribute_name = String::new();
-                    } else {
-                        attribute_value.push(ch);
+                        any => {
+                            attribute_value.push(any);
+                        }
                     }
                 }
-                
                 State::TagEnd => {
-                    if ch == '>' {
-                        let (index, node) = match tmp_nodes.pop() {
-                            Some((index,node)) => (index, node),
-                            None => (i, Node::new(current_name.clone()))
-                        };
-                        if node.name != current_name {
-                            return Err(Self::Error::NotClosed(index))
+                    match ch {
+                        '>' => {
+                            let (index, node) = match nodes.pop() {
+                                Some((index,node)) => (index, node),
+                                None => (i, Node::new(current_name.clone()))
+                            };
+                            if node.name != current_name {
+                                return Err(Self::Error::NotClosed(index))
+                            }
+                            if let Some((_, parent_node)) = nodes.last_mut() {
+                                parent_node.push(node)
+                            } else {
+                                xml.push(node)
+                            }
+                            current_name = String::new();
+                            state = Default::default();
                         }
-                        if let Some((_, parent_node)) = tmp_nodes.last_mut() {
-                            parent_node.push(node)
-                        } else {
-                            xml.push(node)
+                        any => {
+                            current_name.push(any);
                         }
-                        current_name = String::new();
-                        state = State::None;
-                    } else {
-                        current_name.push(ch);
                     }
                 }
             }
-
         }
-        if let Some((index, _)) = tmp_nodes.pop() {
+        if let Some((index, _)) = nodes.pop() {
             return Err(Self::Error::NotClosed(index))
         }
-        println!("{:?}", xml);
         Ok(xml)
     }
 }
