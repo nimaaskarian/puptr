@@ -10,15 +10,18 @@ fn main() -> io::Result<()>{
     let args: Vec<String> = env::args().collect();
 
     let xml = Xml::try_from(input.as_str());
-    if let Err(err) = xml {
-        println!("Error! {:?}", err)
-    } else if let Ok(xml) = xml{
-        let xml = if args.len() >= 2 {
-            xml.search_query(&args[1])
-        } else {
-            xml
-        };
-        print!("{}", xml.to_string());
+    match xml {
+        Ok(xml) => {
+            let xml = if args.len() >= 2 {
+                xml.search_query(&args[1])
+            } else {
+                xml
+            };
+            print!("{}", xml.to_string());
+        }
+        Err(err) => {
+            println!("Error! {:?}", err)
+        }
     }
     Ok(())
 }
