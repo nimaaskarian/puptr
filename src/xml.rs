@@ -1,4 +1,4 @@
-use std::{collections::HashMap, default, io::{BufReader, BufWriter, Read, Write}};
+use std::collections::HashMap;
 mod node;
 use node::XmlNode;
 
@@ -153,10 +153,6 @@ impl Xml {
         self.items.iter().map(|item| item.to_string(0)).collect()
     }
 
-    pub fn write<W: Write>(writer: &mut BufWriter<W>) {
-        unimplemented!()
-    }
-
     pub fn search_query<S>(&self, query: S)  -> Xml where S: ToString {
         let query = query.to_string();
         let mut chars = query.chars().into_iter();
@@ -217,7 +213,6 @@ mod tests {
     fn test_simple_not_closed() {
         let err = Xml::try_from("<a>");
         if let Err(err) = err {
-
             assert_eq!(err, XmlError::NotClosed(2))
         }
     }
@@ -226,7 +221,6 @@ mod tests {
     fn test_node_after_not_closed() {
         let err = Xml::try_from("<a><p></p>");
         if let Err(err) = err {
-
             assert_eq!(err, XmlError::NotClosed(2))
         }
     }
@@ -235,7 +229,6 @@ mod tests {
     fn test_self_closing_after_not_closed() {
         let err = Xml::try_from("<a><p/>");
         if let Err(err) = err {
-
             assert_eq!(err, XmlError::NotClosed(2))
         }
     }
@@ -244,7 +237,6 @@ mod tests {
     fn test_complex_not_closed() {
         let err = Xml::try_from("<a><b><d></d></b><c><e></e></c></a><z><p/>");
         if let Err(err) = err {
-
             assert_eq!(err, XmlError::NotClosed(37))
         }
     }
