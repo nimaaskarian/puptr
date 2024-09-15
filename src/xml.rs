@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, str::FromStr};
 mod node;
 use node::XmlNode;
 
@@ -24,9 +24,9 @@ pub struct Xml {
     items: Vec<Node>
 }
 
-impl TryFrom<&str> for Xml {
-    type Error = XmlError;
-    fn try_from(input:&str) -> Result<Self, Self::Error> {
+impl FromStr for Xml {
+    type Err = XmlError;
+    fn from_str(input:&str) -> Result<Self, Self::Err> {
         let mut nodes: Vec<(usize,Node)> = vec![];
         let mut current_name = String::new();
         let mut current_text = String::new();
